@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  单屏布局：
+    ① 公式编辑区（WebView，占一半高度）
+    ② 结构按钮键盘（内容由 MainActivity 按 KeypadSpec 生成）
+    ③ 只读 LaTeX 源码区
+    ④ 复制 LaTeX 按钮
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/page_bg"
+    android:orientation="vertical">
+
+    <!-- ① 公式编辑区：系统 WebView + MathQuill（assets 离线） -->
+    <WebView
+        android:id="@+id/mathWebView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/card_bg"
+        android:minHeight="110dp" />
+
+    <!-- ② 结构按钮键盘 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/page_bg"
+        android:paddingTop="4dp"
+        android:scrollbarStyle="insideOverlay"
+        android:scrollbars="vertical">
+
+        <GridLayout
+            android:id="@+id/keypad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="6"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:paddingBottom="6dp" />
+    </ScrollView>
+
+    <!-- ③ 只读 LaTeX 源码，实时刷新 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="76dp"
+        android:background="@color/code_bg"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:scrollbars="vertical">
+
+        <TextView
+            android:id="@+id/latexText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="@color/code_text"
+            android:textIsSelectable="true"
+            android:textSize="13sp" />
+    </ScrollView>
+
+    <!-- ④ 复制 LaTeX（用 TextView 而不是 Button：
+         避免系统主题给按钮加 backgroundTint / minHeight / 全大写，外观完全由 drawable 决定） -->
+    <TextView
+        android:id="@+id/copyButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/copy_bg"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="@string/copy_latex"
+        android:textColor="@color/copy_text"
+        android:textSize="16sp" />
+
+</LinearLayout>

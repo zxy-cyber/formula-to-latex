@@ -1,0 +1,19 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/build
+
+# 签名相关：自己留好，不要外传
+/keystore.properties
+/keystore/
+
+# 验收自检产生的临时文件
+/_test/profile/
+/_test/dom*.txt

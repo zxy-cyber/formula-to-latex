@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  自适应图标前景：一个「分数线」符号（分子/分母就是输入方框的意思）。
+  用矢量图代替 PNG，省体积。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 分子方框 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,32 h12 v12 h-12 z" />
+
+    <!-- 分数线 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,50 h44 v4 h-44 z" />
+
+    <!-- 分母方框 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,62 h12 v12 h-12 z" />
+</vector>

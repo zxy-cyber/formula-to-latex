@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>公式编辑</title>
+  <!-- 全部本地文件，无任何 CDN / 网络请求 -->
+  <link rel="stylesheet" href="lib/mathquill.css">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <!-- 公式编辑区：MathQuill 挂载点 -->
+  <div id="wrap">
+    <div id="field"></div>
+  </div>
+
+  <!-- 万一资源加载失败时的提示（正常不会出现） -->
+  <div id="fallback">编辑器资源加载失败，请重新安装应用。</div>
+
+  <script src="lib/jquery.min.js"></script>
+  <script src="lib/mathquill.min.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

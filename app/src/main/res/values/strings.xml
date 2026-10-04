@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">公式转LaTeX</string>
+    <string name="copy_latex">复制 LaTeX</string>
+    <string name="copied">已复制 LaTeX</string>
+    <string name="nothing_to_copy">公式还是空的，先输入点什么吧</string>
+    <string name="latex_placeholder">（这里会实时显示 LaTeX 源码）</string>
+</resources>

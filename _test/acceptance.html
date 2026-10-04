@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公式转LaTeX 验收自检</title>
+  <!-- 与 App 里 index.html 完全一致的依赖与结构，只是加了 driver.js -->
+  <link rel="stylesheet" href="../app/src/main/assets/editor/lib/mathquill.css">
+  <link rel="stylesheet" href="../app/src/main/assets/editor/editor.css">
+</head>
+<body>
+  <div id="wrap">
+    <div id="field"></div>
+  </div>
+  <div id="fallback">编辑器资源加载失败</div>
+  <pre id="results">RUNNING</pre>
+
+  <script src="../app/src/main/assets/editor/lib/jquery.min.js"></script>
+  <script src="../app/src/main/assets/editor/lib/mathquill.min.js"></script>
+  <script src="../app/src/main/assets/editor/editor.js"></script>
+  <script src="driver.js"></script>
+</body>
+</html>

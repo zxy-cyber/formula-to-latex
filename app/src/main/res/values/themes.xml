@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 直接用系统 Material 主题，不引入 AndroidX / Material Components，APK 更小 -->
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/copy_bg</item>
+        <item name="android:colorPrimaryDark">@color/copy_pressed</item>
+        <item name="android:colorAccent">@color/copy_bg</item>
+        <item name="android:windowBackground">@color/page_bg</item>
+        <item name="android:statusBarColor">@color/copy_bg</item>
+        <item name="android:navigationBarColor">@color/page_bg</item>
+    </style>
+</resources>
