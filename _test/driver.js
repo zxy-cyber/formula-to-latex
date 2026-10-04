@@ -313,6 +313,36 @@
     press('down');
     checkTrue('下箭头从求和上限跳回下限', cursorIn('.mq-from'));
 
+    /* --- 字母 / 数字键（应用自带键盘，不调用系统输入法） --- */
+    await reset();
+    press('char:x');
+    press('sup');
+    press('char:2');
+    check('字母数字键 + 上标 -> x^{2}', latex(), 'x^{2}');
+
+    await reset();
+    press('sup');                 // 先点结构按钮
+    press('char:x');              // 再用字母键打"底"
+    await sleep(250);             // 打完底会自动跳进方框
+    press('char:2');
+    check('先点上标再用字母键打底 -> x^{2}', latex(), 'x^{2}');
+
+    await reset();
+    press('char:1');
+    press('char:a');
+    press('char:9');
+    check('连续字母数字键', latex(), '1a9');
+
+    /* --- 完全不用输入法：走一遍验收 2 的真实流程（求和 + i=1 + n） --- */
+    await reset();
+    press('sum');                 // 光标已在下限方框
+    press('char:i');
+    press('eq');                  // 固定行的 =
+    press('char:1');
+    press('up');                  // 固定行 ↑ -> 跳到上限方框
+    press('char:n');
+    check('无输入法完成 \\sum_{i=1}^{n}', latex(), '\\sum_{i=1}^{n}');
+
     /* --- 历史载回编辑器：MQK.setLatex --- */
     await reset();
     window.MQK.setLatex('\\frac{a}{b}');

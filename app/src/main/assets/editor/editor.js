@@ -399,6 +399,18 @@
     scheduleSync();
   }
 
+  /**
+   * 字母 / 数字键：直接把字符交给 MathQuill，效果与系统输入法打字完全一致
+   * （走的就是输入桥内部用的那个 mq.typedText）。
+   */
+  function typeChar(text) {
+    if (!text) return;
+    mq.focus();
+    mq.typedText(text);
+    noteCursorSlot();
+    scheduleSync();
+  }
+
   /** 把一条历史公式载回编辑器 */
   function setLatex(latex) {
     if (!mq) return;
@@ -443,10 +455,21 @@
     focusSlot(list[target]);
   }
 
+  /**
+   * 这个动作算不算"在打底"？
+   * 字母 / 数字（char:x）和希腊字母、运算符都是往公式里塞内容的，
+   * 它们正是「先点上标再打底」里那个"底"，所以不能取消 pendingSlot。
+   */
+  function isTypingAction(action) {
+    return action.indexOf('char:') === 0 ||
+      Object.prototype.hasOwnProperty.call(SYMBOLS, action);
+  }
+
   /* 按钮总入口：Android 端只传一个动作名 */
   function press(action) {
     if (!mq) return;
-    pendingSlot = null;     /* 换动作了就取消「打完底自动跳」的等待 */
+    /* 换成结构/导航/编辑动作时，取消「打完底自动跳进方框」的等待 */
+    if (!isTypingAction(action)) pendingSlot = null;
     try {
       switch (action) {
         case 'undo':      return undo();
@@ -468,6 +491,10 @@
       }
       if (Object.prototype.hasOwnProperty.call(SYMBOLS, action)) {
         return insertSymbol(action);
+      }
+      /* 字母 / 数字键：action 形如 "char:x"，等价于用户敲了一下这个字符 */
+      if (action.indexOf('char:') === 0) {
+        return typeChar(action.slice(5));
       }
     } catch (err) {
       notifyError(err);

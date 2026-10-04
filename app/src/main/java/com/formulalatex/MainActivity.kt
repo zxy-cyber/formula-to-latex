@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -23,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -118,18 +118,28 @@ class MainActivity : AppCompatActivity() {
      * ================================================================ */
 
     private fun buildKeypad() {
-        fillGrid(
-            findViewById(R.id.keypadStructure), KeypadSpec.STRUCTURE_KEYS,
-            labelSize = 20f, cellHeightDp = 48
-        )
-        fillGrid(
-            findViewById(R.id.keypadSymbol), KeypadSpec.SYMBOL_KEYS,
-            labelSize = 17f, cellHeightDp = 44
-        )
-        fillGrid(
-            findViewById(R.id.keypadEdit), KeypadSpec.EDIT_KEYS,
-            labelSize = 19f, cellHeightDp = 46
-        )
+        val symbolPage = findViewById<GridLayout>(R.id.keypadSymbol)
+        val charPage = findViewById<GridLayout>(R.id.keypadChars)
+        val fixedRow = findViewById<GridLayout>(R.id.keypadFixed)
+
+        // 符号页：结构模板 / 希腊字母 / 运算符 / 撤销重做 / 方框跳转 —— 6 列 × 6 行正好铺满
+        fillGrid(symbolPage, KeypadSpec.SYMBOL_PAGE, labelSize = 18f, cellHeightDp = 44)
+        // 字母数字页：0-9 + a-z —— 同样 6 × 6，不需要滚动
+        fillGrid(charPage, KeypadSpec.CHAR_PAGE, labelSize = 18f, cellHeightDp = 44)
+        // 固定行：光标方向键 + 删除 + 清空，键更大、位置更靠下
+        fillGrid(fixedRow, KeypadSpec.FIXED_ROW, labelSize = 21f, cellHeightDp = 50)
+
+        // 页签只切换可见性，不重建视图（切换零延迟）
+        findViewById<MaterialButtonToggleGroup>(R.id.pageToggle)
+            .addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (!isChecked) return@addOnButtonCheckedListener
+                val showSymbols = checkedId == R.id.pageSymbols
+                symbolPage.visibility = if (showSymbols) View.VISIBLE else View.GONE
+                charPage.visibility = if (showSymbols) View.GONE else View.VISIBLE
+            }
+
+        symbolPage.visibility = View.VISIBLE
+        charPage.visibility = View.GONE
     }
 
     private fun fillGrid(grid: GridLayout, keys: List<KeyItem>, labelSize: Float, cellHeightDp: Int) {
@@ -165,31 +175,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 分组 -> 按键布局模板：结构/光标最显眼，符号次之，编辑操作最轻 */
+    /** 分组 -> 按键布局模板：结构/光标/数字最显眼，符号与字母次之，编辑操作最轻 */
     private fun templateFor(group: KeyItem.Group): Int = when (group) {
-        KeyItem.Group.STRUCTURE, KeyItem.Group.CURSOR -> R.layout.key_tonal
-        KeyItem.Group.GREEK, KeyItem.Group.OPERATOR -> R.layout.key_outlined
+        KeyItem.Group.STRUCTURE, KeyItem.Group.CURSOR, KeyItem.Group.DIGIT -> R.layout.key_tonal
+        KeyItem.Group.GREEK, KeyItem.Group.OPERATOR, KeyItem.Group.LETTER -> R.layout.key_outlined
         KeyItem.Group.EDIT -> R.layout.key_text
     }
 
-    /** 把一个按键转发给网页里的 MQK.press(action) */
+    /**
+     * 把一个按键转发给网页里的 MQK.press(action)。
+     * 注意：这里**不再唤起系统输入法**——字母/数字由「字母数字」页的按键插入，
+     * 编辑区用的是 NoImeWebView，系统键盘永远不会弹出来。
+     */
     private fun pressKey(action: String) {
         webView.evaluateJavascript("window.MQK && window.MQK.press('$action');", null)
-        if (KeypadSpec.NEEDS_KEYBOARD.contains(action)) {
-            showKeyboardLater()
-        }
-    }
-
-    /**
-     * 结构按钮按下后主动唤起系统键盘。
-     * 网页里 focus 是异步完成的，所以延后一点点再弹，成功率高。
-     */
-    private fun showKeyboardLater() {
-        webView.requestFocus()
-        webView.postDelayed({
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.showSoftInput(webView, InputMethodManager.SHOW_IMPLICIT)
-        }, 80)
     }
 
     /* ==================================================================

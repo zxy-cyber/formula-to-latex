@@ -5,100 +5,93 @@ package com.formulalatex
  *
  * @param label  按钮上显示的**数学符号**（不给用户看"极限/根号"这类中文词）
  * @param action 传给网页的动作名，对应 assets/editor/editor.js 里的
- *               TEMPLATES / SYMBOLS / ARROWS / 以及 undo、redo、clear、backspace、prev、next
+ *               TEMPLATES / SYMBOLS / "char:x" / 以及 undo、redo、clear、backspace、prev、next、left、right、up、down
  * @param group  分组，决定用哪种 Material 按钮样式
  */
 data class KeyItem(val label: String, val action: String, val group: Group) {
 
     /**
-     * 按键分组，直接对应三种 Material 3 按钮样式：
+     * 按键分组，对应几种 Material 3 按钮样式：
      *   STRUCTURE / CURSOR —— 实心淡色按钮（FilledTonalButton），最显眼
      *   GREEK / OPERATOR   —— 描边按钮（OutlinedButton）
+     *   DIGIT / LETTER     —— 数字用实心淡色、字母用描边（数字更常用）
      *   EDIT               —— 文字按钮（TextButton），最轻
      */
-    enum class Group { STRUCTURE, GREEK, OPERATOR, CURSOR, EDIT }
+    enum class Group { STRUCTURE, GREEK, OPERATOR, DIGIT, LETTER, CURSOR, EDIT }
 }
 
-/** 全部按键：结构 -> 希腊字母与运算符 -> 光标与编辑 */
+/**
+ * 键盘布局。为了不用上下翻动，按键分成「两页 + 一条固定行」：
+ *
+ *   ① 符号页（6 列 × 6 行 = 36 格，放 35 键）
+ *      结构模板 9 + 希腊字母 10 + 运算符 11 + 撤销/重做/清空/方框跳转 5
+ *   ② 字母数字页（6 列 × 6 行 = 36 格，正好 36 键）
+ *      0-9 + a-z
+ *   ③ 固定行（不随页切换，永远可见）
+ *      ← ↑ ↓ → = ⌫
+ *      方向键放在这里是因为它们最常用，而且位置刚好在拇指区；
+ *      `=` 也放这里：填 "i=1"、"n=0" 这类上下限时不用来回切页。
+ *
+ * 典型流程（全程不弹系统输入法）：
+ *   点 ∑ → 光标已在下限方框 → 字母页 i → 固定行 = → 字母页 1
+ *        → 固定行 ↑（跳到上限方框）→ 字母页 n   得到 \sum_{i=1}^{n}
+ */
 object KeypadSpec {
 
-    /**
-     * 结构模板：点一下插入骨架，光标自动进第一个方框。
-     * 标签一律用数学符号：□/□ 表示分数、x² 上标、x₂ 下标、x₂² 上下标、
-     * ∑ 求和、lim 极限、∫ 积分、√ 根号、( ) 括号。
-     */
-    private val STRUCTURE = listOf(
-        KeyItem("□/□", "frac", KeyItem.Group.STRUCTURE),
-        KeyItem("x²", "sup", KeyItem.Group.STRUCTURE),
-        KeyItem("x₂", "sub", KeyItem.Group.STRUCTURE),
-        KeyItem("x₂²", "supsub", KeyItem.Group.STRUCTURE),
-        KeyItem("∑", "sum", KeyItem.Group.STRUCTURE),
-        KeyItem("lim", "lim", KeyItem.Group.STRUCTURE),
-        KeyItem("∫", "int", KeyItem.Group.STRUCTURE),
-        KeyItem("√", "sqrt", KeyItem.Group.STRUCTURE),
-        KeyItem("( )", "paren", KeyItem.Group.STRUCTURE)
-    )
+    /** ① 符号页 */
+    val SYMBOL_PAGE: List<KeyItem> = buildList {
+        // 结构模板：□/□ 分数、x² 上标、x₂ 下标、x₂² 上下标、∑ 求和、lim 极限、∫ 积分、√ 根号、( ) 括号
+        add(KeyItem("□/□", "frac", KeyItem.Group.STRUCTURE))
+        add(KeyItem("x²", "sup", KeyItem.Group.STRUCTURE))
+        add(KeyItem("x₂", "sub", KeyItem.Group.STRUCTURE))
+        add(KeyItem("x₂²", "supsub", KeyItem.Group.STRUCTURE))
+        add(KeyItem("∑", "sum", KeyItem.Group.STRUCTURE))
+        add(KeyItem("lim", "lim", KeyItem.Group.STRUCTURE))
+        add(KeyItem("∫", "int", KeyItem.Group.STRUCTURE))
+        add(KeyItem("√", "sqrt", KeyItem.Group.STRUCTURE))
+        add(KeyItem("( )", "paren", KeyItem.Group.STRUCTURE))
 
-    /** 希腊字母 */
-    private val GREEK = listOf(
-        KeyItem("α", "alpha", KeyItem.Group.GREEK),
-        KeyItem("β", "beta", KeyItem.Group.GREEK),
-        KeyItem("γ", "gamma", KeyItem.Group.GREEK),
-        KeyItem("θ", "theta", KeyItem.Group.GREEK),
-        KeyItem("π", "pi", KeyItem.Group.GREEK),
-        KeyItem("λ", "lambda", KeyItem.Group.GREEK),
-        KeyItem("μ", "mu", KeyItem.Group.GREEK),
-        KeyItem("σ", "sigma", KeyItem.Group.GREEK),
-        KeyItem("ω", "omega", KeyItem.Group.GREEK),
-        KeyItem("∞", "infty", KeyItem.Group.GREEK)
-    )
+        // 希腊字母
+        listOf(
+            "α" to "alpha", "β" to "beta", "γ" to "gamma", "θ" to "theta", "π" to "pi",
+            "λ" to "lambda", "μ" to "mu", "σ" to "sigma", "ω" to "omega", "∞" to "infty"
+        ).forEach { (label, action) -> add(KeyItem(label, action, KeyItem.Group.GREEK)) }
 
-    /** 运算符 */
-    private val OPERATOR = listOf(
-        KeyItem("+", "plus", KeyItem.Group.OPERATOR),
-        KeyItem("−", "minus", KeyItem.Group.OPERATOR),
-        KeyItem("×", "times", KeyItem.Group.OPERATOR),
-        KeyItem("÷", "div", KeyItem.Group.OPERATOR),
-        KeyItem("=", "eq", KeyItem.Group.OPERATOR),
-        KeyItem("≠", "ne", KeyItem.Group.OPERATOR),
-        KeyItem("≤", "le", KeyItem.Group.OPERATOR),
-        KeyItem("≥", "ge", KeyItem.Group.OPERATOR),
-        KeyItem("→", "to", KeyItem.Group.OPERATOR),
-        KeyItem("⇒", "rArr", KeyItem.Group.OPERATOR),
-        KeyItem("∈", "isin", KeyItem.Group.OPERATOR),
-        KeyItem("⊂", "subset", KeyItem.Group.OPERATOR)
-    )
+        // 运算符（= 已提到固定行，这里不再重复）
+        listOf(
+            "+" to "plus", "−" to "minus", "×" to "times", "÷" to "div",
+            "≠" to "ne", "≤" to "le", "≥" to "ge", "→" to "to", "⇒" to "rArr",
+            "∈" to "isin", "⊂" to "subset"
+        ).forEach { (label, action) -> add(KeyItem(label, action, KeyItem.Group.OPERATOR)) }
+
+        // 撤销 / 重做 / 清空 / 方框跳转（□← 表示"跳到上一个方框"）
+        add(KeyItem("↶", "undo", KeyItem.Group.EDIT))
+        add(KeyItem("↷", "redo", KeyItem.Group.EDIT))
+        add(KeyItem("C", "clear", KeyItem.Group.EDIT))
+        add(KeyItem("□←", "prev", KeyItem.Group.CURSOR))
+        add(KeyItem("□→", "next", KeyItem.Group.CURSOR))
+    }
+
+    /** ② 字母数字页：0-9 在前（更常用），接着 a-z，刚好 36 键铺满 6 × 6 */
+    val CHAR_PAGE: List<KeyItem> = buildList {
+        (0..9).forEach { add(KeyItem("$it", "char:$it", KeyItem.Group.DIGIT)) }
+        ('a'..'z').forEach { add(KeyItem("$it", "char:$it", KeyItem.Group.LETTER)) }
+    }
 
     /**
-     * 光标方向键 + 方框跳转：
-     *   ← ↑ ↓ →   移动光标（↑↓ 在分母/分子、下限/上限之间切换）
-     *   ⇦ ⇨       在「方框」之间跳（填求和上下限、极限条件时最顺手）
+     * ③ 固定行（永远可见，键更大）：
+     * ← → 逐字符移动；↑ ↓ 在分母/分子、求和下限/上限之间跳；
+     * `=` 直接插入等号（填 i=1 这类上下限时最常用）；⌫ 删除。
      */
-    private val CURSOR = listOf(
+    val FIXED_ROW: List<KeyItem> = listOf(
         KeyItem("←", "left", KeyItem.Group.CURSOR),
         KeyItem("↑", "up", KeyItem.Group.CURSOR),
         KeyItem("↓", "down", KeyItem.Group.CURSOR),
         KeyItem("→", "right", KeyItem.Group.CURSOR),
-        KeyItem("⇦", "prev", KeyItem.Group.CURSOR),
-        KeyItem("⇨", "next", KeyItem.Group.CURSOR)
+        KeyItem("=", "eq", KeyItem.Group.CURSOR),
+        KeyItem("⌫", "backspace", KeyItem.Group.CURSOR)
     )
 
-    /** 编辑操作：撤销 ↶、重做 ↷、删除 ⌫、清空 C */
-    private val EDIT = listOf(
-        KeyItem("↶", "undo", KeyItem.Group.EDIT),
-        KeyItem("↷", "redo", KeyItem.Group.EDIT),
-        KeyItem("⌫", "backspace", KeyItem.Group.EDIT),
-        KeyItem("C", "clear", KeyItem.Group.EDIT)
-    )
-
-    /** 三段键盘的内容：结构 / 希腊字母+运算符 / 光标+编辑 */
-    val STRUCTURE_KEYS: List<KeyItem> = STRUCTURE
-    val SYMBOL_KEYS: List<KeyItem> = GREEK + OPERATOR
-    val EDIT_KEYS: List<KeyItem> = CURSOR + EDIT
-
-    /** 兼容旧调用：按屏幕顺序排列的全部按钮 */
-    val ALL: List<KeyItem> = STRUCTURE + SYMBOL_KEYS + EDIT_KEYS
-
-    /** 按下这些按钮后主动弹出系统键盘：因为接下来一定要打字 */
-    val NEEDS_KEYBOARD: Set<String> = STRUCTURE.map { it.action }.toSet()
+    /** 兼容旧调用：全部按键 */
+    val ALL: List<KeyItem> = SYMBOL_PAGE + CHAR_PAGE + FIXED_ROW
 }
