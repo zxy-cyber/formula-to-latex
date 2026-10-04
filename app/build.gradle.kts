@@ -18,7 +18,7 @@ val hasReleaseKeystore = keystoreProps.getProperty("storeFile") != null
 
 android {
     namespace = "com.formulalatex"
-    // 本机装的是 platform android-37.0，所以用 37 编译；targetSdk 按需求停在 35。
+    // targetSdk 按要求停在 35；compileSdk 取比它更新的已安装平台即可
     compileSdk = 37
 
     defaultConfig {
