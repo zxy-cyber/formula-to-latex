@@ -46,6 +46,15 @@ one-tap copy at the bottom. UI is in Chinese; no LaTeX knowledge required.*
 - **极其轻量**：release 包约 **100 KB**；无 AndroidX、无 Material、无第三方依赖、无原生库、无 PNG 图标
 - **撤销 / 重做 / 清空 / 删除**，以及实时 LaTeX 输出
 
+## 下载安装
+
+- 从 [Releases](https://github.com/zxy-cyber/formula-to-latex/releases/latest) 页面下载 `FormulaToLatex-v1.0.apk`
+- 拷进手机点一下安装，按提示允许「安装未知应用」；或插数据线执行 `adb install -r FormulaToLatex-v1.0.apk`
+- 要求 **Android 8.0（API 26）及以上**
+
+> 应用不申请任何权限（包括网络权限），编辑内核离线内置，装好后完全断网也能用。
+> 发布包的 SHA-256 校验值见对应 Release 页面。
+
 ## 环境与版本
 
 本仓库验证过的组合（都能正常构建）：
