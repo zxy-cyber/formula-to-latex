@@ -273,6 +273,55 @@
     press('prev');
     checkTrue('上一步回到分子方框', cursorIn('.mq-numerator'));
 
+    /* --- 光标方向键 ← → ：逐字符移动 --- */
+    await reset();
+    type('ab');
+    press('left');
+    type('X');
+    check('左箭头：光标左移一位后插入', latex(), 'aXb');
+
+    await reset();
+    type('ab');
+    press('left');
+    press('left');
+    type('X');
+    check('左箭头连续两次：插到最前', latex(), 'Xab');
+
+    await reset();
+    type('ab');
+    press('left');
+    press('right');
+    type('X');
+    check('右箭头：移回末尾后插入', latex(), 'abX');
+
+    /* --- 光标方向键 ↑ ↓ ：在上下结构之间跳 --- */
+    await reset();
+    press('frac');
+    type('1');
+    press('down');
+    checkTrue('下箭头进入分母方框', cursorIn('.mq-denominator'));
+    type('2');
+    check('下箭头后输入分母', latex(), '\\frac{1}{2}');
+    press('up');
+    checkTrue('上箭头回到分子方框', cursorIn('.mq-numerator'));
+
+    await reset();
+    press('sum');
+    type('i=1');
+    press('up');
+    checkTrue('上箭头从求和下限跳到上限', cursorIn('.mq-to'));
+    press('down');
+    checkTrue('下箭头从求和上限跳回下限', cursorIn('.mq-from'));
+
+    /* --- 历史载回编辑器：MQK.setLatex --- */
+    await reset();
+    window.MQK.setLatex('\\frac{a}{b}');
+    check('setLatex 载入历史公式', latex(), '\\frac{a}{b}');
+    await sleep(250);
+    press('undo');
+    await sleep(60);
+    check('载入后仍可撤销', latex(), '');
+
     /* --- 全程没有输入任何反斜杠命令：上面所有输入都只是普通字符和按钮 --- */
     checkTrue('所有模板都能由按钮完成（无 \\ 输入）', true);
 

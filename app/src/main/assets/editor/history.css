@@ -1,0 +1,96 @@
+@charset "UTF-8";
+/* ==========================================================================
+ * 公式历史弹层样式
+ * 深色/浅色跟着系统走（Android 侧调用 MQHistory.setTheme 切换 .dark）
+ * ========================================================================== */
+
+:root {
+  --bg: #ffffff;
+  --fg: #1f2937;
+  --sub: #6b7280;
+  --line: #e5e7eb;
+  --chip: #f3f4f6;
+}
+
+html.dark {
+  --bg: #0f0d13;
+  --fg: #e6e1e5;
+  --sub: #9aa0a6;
+  --line: #2b2930;
+  --chip: #1d1b20;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#list {
+  padding: 2px 12px 10px 12px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.item:active {
+  background: var(--chip);
+}
+
+/* 渲染后的公式：给足宽度，长公式横向滚动 */
+.formula {
+  flex: 0 0 auto;
+  max-width: 45%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  font-size: 21px;
+  white-space: nowrap;
+}
+
+/* 底下附一行原始 LaTeX，方便需要时核对 */
+.latex {
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--sub);
+  font-family: monospace;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.del {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sub);
+  font-size: 14px;
+  line-height: 30px;
+}
+
+.del:active {
+  background: var(--chip);
+}
+
+#empty {
+  display: none;
+  padding: 40px 24px;
+  color: var(--sub);
+  font-size: 14px;
+  line-height: 1.9;
+  text-align: center;
+  white-space: pre-line;
+}

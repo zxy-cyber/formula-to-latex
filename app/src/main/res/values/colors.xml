@@ -1,29 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 页面 -->
-    <color name="page_bg">#F2F4F8</color>
-    <color name="card_bg">#FFFFFF</color>
-
-    <!-- 普通按键 -->
-    <color name="key_bg">#FFFFFF</color>
-    <color name="key_pressed">#DCE7F8</color>
-    <color name="key_stroke">#C9D3E0</color>
-    <color name="key_text">#1F2937</color>
-
-    <!-- 编辑操作按键（上一步/下一步/删除/清空/撤销/重做） -->
-    <color name="key_edit_bg">#E8EEF7</color>
-    <color name="key_edit_pressed">#D2E0F5</color>
-    <color name="key_edit_stroke">#BFCDE0</color>
-
-    <!-- LaTeX 源码区 -->
+    <!--
+      界面其余颜色全部交给 Material 3 主题的语义色（?attr/colorSurface 等），
+      这里只保留 LaTeX 代码块的配色（日间也保持深色，像代码编辑器）。
+      夜间模式的对应值在 values-night/colors.xml。
+    -->
     <color name="code_bg">#111827</color>
     <color name="code_text">#7CE38B</color>
     <color name="code_hint">#9CA3AF</color>
-
-    <!-- 复制按钮 -->
-    <color name="copy_bg">#2563EB</color>
-    <color name="copy_pressed">#1D4ED8</color>
-    <color name="copy_text">#FFFFFF</color>
 
     <!-- 应用图标底色 -->
     <color name="ic_launcher_background">#2563EB</color>

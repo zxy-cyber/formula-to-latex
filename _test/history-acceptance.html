@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公式历史 验收自检</title>
+  <!-- 与 App 里 editor/history.html 完全一致的依赖，只是多挂了 driver -->
+  <link rel="stylesheet" href="../app/src/main/assets/editor/lib/mathquill.css">
+  <link rel="stylesheet" href="../app/src/main/assets/editor/history.css">
+</head>
+<body>
+  <div id="list"></div>
+  <div id="empty"></div>
+  <pre id="results">RUNNING</pre>
+
+  <script src="../app/src/main/assets/editor/lib/jquery.min.js"></script>
+  <script src="../app/src/main/assets/editor/lib/mathquill.min.js"></script>
+  <script src="../app/src/main/assets/editor/history.js"></script>
+  <script src="history-driver.js"></script>
+</body>
+</html>

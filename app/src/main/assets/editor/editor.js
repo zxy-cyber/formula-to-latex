@@ -388,6 +388,37 @@
     scheduleSync();
   }
 
+  /**
+   * 方向键：直接交给 MathQuill，行为跟真实键盘的方向键完全一致。
+   * ← → 逐字符移动；↑ ↓ 在分母/分子、求和下限/上限这类上下结构之间跳转。
+   */
+  function moveCaret(key) {
+    mq.focus();
+    mq.keystroke(key);
+    noteCursorSlot();
+    scheduleSync();
+  }
+
+  /** 把一条历史公式载回编辑器 */
+  function setLatex(latex) {
+    if (!mq) return;
+    mq.latex(String(latex == null ? '' : latex));
+    mq.moveToRightEnd();
+    curSlot = null;
+    limitSlotEl = null;
+    pendingSlot = null;
+    lastReported = mq.latex();
+    pushHistory();
+    reportLatex();
+  }
+
+  /** 跟随系统深浅色（Android 侧读 uiMode 后调用） */
+  function setTheme(mode) {
+    var root = document.documentElement;
+    if (mode === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
+  }
+
   /** 清空 */
   function clearAll() {
     mq.latex('');
@@ -426,6 +457,10 @@
         case 'next':      return step(1);
         case 'paren':     return insertParen();
         case 'lim':       return insertLimit();
+        case 'left':      return moveCaret('Left');
+        case 'right':     return moveCaret('Right');
+        case 'up':        return moveCaret('Up');
+        case 'down':      return moveCaret('Down');
         default: break;
       }
       if (Object.prototype.hasOwnProperty.call(TEMPLATES, action)) {
@@ -539,6 +574,8 @@
   window.MQK = {
     press: press,
     currentLatex: function () { return mq ? normalize(mq.latex()) : ''; },
+    setLatex: setLatex,
+    setTheme: setTheme,
     focus: function () { if (mq) mq.focus(); }
   };
 

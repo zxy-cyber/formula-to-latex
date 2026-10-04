@@ -18,16 +18,15 @@ val hasReleaseKeystore = keystoreProps.getProperty("storeFile") != null
 
 android {
     namespace = "com.formulalatex"
-    // 你机器上装的是 platform android-37.0，所以用 37 编译；
-    // targetSdk 仍然按需求停在 35。
+    // 本机装的是 platform android-37.0，所以用 37 编译；targetSdk 按需求停在 35。
     compileSdk = 37
 
     defaultConfig {
         applicationId = "com.formulalatex"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 
     signingConfigs {
@@ -78,8 +77,8 @@ android {
 }
 
 dependencies {
-    // 刻意不引入任何第三方库：
-    //   * 编辑区内核 MathQuill + jQuery 直接以 assets 形式离线打包，运行时不需要网络；
-    //   * 界面只用系统控件（Activity / WebView / GridLayout），不引入 AndroidX 和 Material，
-    //     这样 release 包体积极小，也没有多余字体和资源。
+    // 只引入一个依赖：官方 Material Components（Material 3 主题、按钮、卡片、底部弹层）。
+    // 它会传递带入 appcompat / core 等 AndroidX 基础库，这是主流做法；
+    // 公式编辑内核 MathQuill + jQuery 仍然以 assets 形式离线打包，不算作依赖。
+    implementation("com.google.android.material:material:1.14.0")
 }

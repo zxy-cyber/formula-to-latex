@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 夜间模式下 LaTeX 代码块的配色（界面其余部分由 Material 3 主题自动处理） -->
+<resources>
+    <color name="code_bg">#0B1220</color>
+    <color name="code_text">#86EFAC</color>
+    <color name="code_hint">#6B7280</color>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 按键模板：文字按钮（撤销 / 重做 / 删除 / 清空） -->
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.Material3.Button.TextButton"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp"
+    android:textAllCaps="false"
+    android:textAppearance="@style/KeypadLabel" />

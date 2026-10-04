@@ -1,13 +1,15 @@
 package com.formulalatex
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.webkit.JavascriptInterface
@@ -17,29 +19,45 @@ import android.webkit.WebViewClient
 import android.widget.GridLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
- * 整个应用只有这一个界面：
+ * 整个应用只有这一个界面（Material 3）：
  *
- *   ① 上：公式编辑区   —— 系统 WebView + MathQuill（资源全部离线在 assets 里）
- *   ② 中：结构按钮键盘 —— 全中文，由 [KeypadSpec] 生成，不写死布局
- *   ③ 下：只读 LaTeX 源码（随编辑实时刷新）
- *   ④ 底：复制 LaTeX 按钮
+ *   ① 顶部：标题 + 「历史」按钮
+ *   ② 公式编辑区   —— 系统 WebView + MathQuill（资源全部离线在 assets 里）
+ *   ③ 按键区       —— 数学符号按钮，由 [KeypadSpec] 生成
+ *   ④ LaTeX 源码   —— 实时刷新的只读代码块
+ *   ⑤ 复制 LaTeX   —— 复制到剪贴板，并自动记入公式历史
  *
- * 没有输入法、历史、收藏、设置、分享、引导、账号、网络：
+ * 没有输入法、收藏、设置、分享、引导、账号、网络：
  * Manifest 里一个权限都没申请，WebView 也显式关掉了网络加载。
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var latexView: TextView
+
+    private lateinit var historyStore: HistoryStore
 
     /** 网页每次改动公式都会把 LaTeX 推过来，复制按钮优先用它兜底 */
     @Volatile
     private var currentLatex: String = ""
 
     /** 网页回调对象；WebView 只持弱引用，所以这里用字段强引用住 */
-    private val bridge = EditorBridge()
+    private val editorBridge = EditorBridge()
+    private val historyBridge = HistoryBridge()
+
+    /** 历史弹层（只创建一次，之后复用） */
+    private var historyDialog: BottomSheetDialog? = null
+    private var historyWebView: WebView? = null
+    private var historyReady = false
+    private var historyItems: List<String> = emptyList()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,24 +66,31 @@ class MainActivity : Activity() {
 
         webView = findViewById(R.id.mathWebView)
         latexView = findViewById(R.id.latexText)
+        historyStore = HistoryStore(this)
 
-        setupWebView()
-        buildKeypad(findViewById(R.id.keypad))
-        findViewById<TextView>(R.id.copyButton).setOnClickListener { copyLatex() }
+        configureWebView(webView)
+        webView.addJavascriptInterface(editorBridge, JS_BRIDGE)
+        webView.loadUrl(EDITOR_URL)
+
+        buildKeypad()
+
+        findViewById<MaterialButton>(R.id.copyButton).setOnClickListener { copyLatex() }
+        findViewById<MaterialButton>(R.id.historyButton).setOnClickListener { showHistory() }
 
         renderLatex("")
+        applySystemBarAppearance()
     }
 
     /* ==================================================================
      * 一、WebView 配置：只用系统内核，只读 assets，不联网
      * ================================================================ */
 
-    private fun setupWebView() {
-        val settings = webView.settings
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun configureWebView(view: WebView) {
+        val settings = view.settings
         settings.javaScriptEnabled = true          // MathQuill 必须用 JS
         settings.domStorageEnabled = false         // 不需要任何本地存储
-        settings.databaseEnabled = false
-        settings.allowFileAccess = false           // 不去读文件系统
+        settings.allowFileAccess = false           // 不去读文件系统（assets 仍可加载）
         settings.allowContentAccess = false
         settings.blockNetworkLoads = true          // 双保险：禁止网络加载
         settings.cacheMode = WebSettings.LOAD_NO_CACHE
@@ -78,53 +103,73 @@ class MainActivity : Activity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             @Suppress("DEPRECATION")
-            settings.forceDark = WebSettings.FORCE_DARK_OFF    // 别把公式反色
+            settings.forceDark = WebSettings.FORCE_DARK_OFF    // 深浅色由页面自己控制
         }
 
-        webView.isVerticalScrollBarEnabled = false
-        webView.isHorizontalScrollBarEnabled = false
-        webView.overScrollMode = View.OVER_SCROLL_NEVER
-        webView.setBackgroundColor(0xFFFFFFFF.toInt())
-        webView.webViewClient = WebViewClient()    // 站内跳转，绝不打开浏览器
-        webView.addJavascriptInterface(bridge, "Android")
-        webView.loadUrl(EDITOR_URL)
+        view.isVerticalScrollBarEnabled = false
+        view.isHorizontalScrollBarEnabled = false
+        view.overScrollMode = View.OVER_SCROLL_NEVER
+        view.setBackgroundColor(Color.TRANSPARENT)
+        view.webViewClient = WebViewClient()       // 站内跳转，绝不打开浏览器
     }
 
     /* ==================================================================
-     * 二、按键面板：用代码铺进 GridLayout
+     * 二、按键面板：用代码按 Material 3 样式铺进三段 GridLayout
      * ================================================================ */
 
-    private fun buildKeypad(grid: GridLayout) {
-        val margin = dp(2)
-        val cellHeight = dp(42)
+    private fun buildKeypad() {
+        fillGrid(
+            findViewById(R.id.keypadStructure), KeypadSpec.STRUCTURE_KEYS,
+            labelSize = 20f, cellHeightDp = 48
+        )
+        fillGrid(
+            findViewById(R.id.keypadSymbol), KeypadSpec.SYMBOL_KEYS,
+            labelSize = 17f, cellHeightDp = 44
+        )
+        fillGrid(
+            findViewById(R.id.keypadEdit), KeypadSpec.EDIT_KEYS,
+            labelSize = 19f, cellHeightDp = 46
+        )
+    }
 
-        KeypadSpec.ALL.forEach { item ->
-            /* 用 TextView 而不是 Button：Button 在 Material 主题下会自带
-               backgroundTint、minHeight、stateListAnimator 和全大写，
-               外观不好控制；TextView + 选择器 drawable 更可控也更小。 */
-            val key = TextView(this).apply {
+    private fun fillGrid(grid: GridLayout, keys: List<KeyItem>, labelSize: Float, cellHeightDp: Int) {
+        val density = resources.displayMetrics.density
+        val margin = (2 * density).toInt()
+
+        keys.forEach { item ->
+            // 从 XML 模板 inflate：MaterialButton 没有公开的"带样式"构造函数，
+            // 用布局模板套 style 是最稳的做法
+            val button = layoutInflater
+                .inflate(templateFor(item.group), grid, false) as MaterialButton
+
+            button.apply {
                 text = item.label
-                textSize = 13f
-                gravity = Gravity.CENTER
+                textSize = labelSize
+                insetTop = 0                   // 去掉 Material 按钮自带的上下留白，
+                insetBottom = 0                // 让按键铺满整个格子
+                cornerRadius = (10 * density).toInt()
                 setPadding(0, 0, 0, 0)
-                setTextColor(getColor(R.color.key_text))
-                setBackgroundResource(
-                    if (item.group == KeyItem.Group.EDIT) R.drawable.key_edit_bg
-                    else R.drawable.key_bg
-                )
-                isClickable = true
-                isFocusable = true
-                setOnClickListener { pressKey(item.action) }
+                setOnClickListener { view ->
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    pressKey(item.action)
+                }
             }
 
             val params = GridLayout.LayoutParams().apply {
                 width = 0
-                height = cellHeight
+                height = (cellHeightDp * density).toInt()
                 columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)   // 每列等宽
                 setMargins(margin, margin, margin, margin)
             }
-            grid.addView(key, params)
+            grid.addView(button, params)
         }
+    }
+
+    /** 分组 -> 按键布局模板：结构/光标最显眼，符号次之，编辑操作最轻 */
+    private fun templateFor(group: KeyItem.Group): Int = when (group) {
+        KeyItem.Group.STRUCTURE, KeyItem.Group.CURSOR -> R.layout.key_tonal
+        KeyItem.Group.GREEK, KeyItem.Group.OPERATOR -> R.layout.key_outlined
+        KeyItem.Group.EDIT -> R.layout.key_text
     }
 
     /** 把一个按键转发给网页里的 MQK.press(action) */
@@ -148,7 +193,7 @@ class MainActivity : Activity() {
     }
 
     /* ==================================================================
-     * 三、下方只读 LaTeX 区
+     * 三、LaTeX 源码区 / 深浅色
      * ================================================================ */
 
     private fun renderLatex(latex: String) {
@@ -161,8 +206,33 @@ class MainActivity : Activity() {
         }
     }
 
+    private val isNightMode: Boolean
+        get() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
+
+    /** 状态栏图标跟随深浅色 */
+    private fun applySystemBarAppearance() {
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !isNightMode
+            isAppearanceLightNavigationBars = !isNightMode
+        }
+    }
+
+    /** 把深浅色告诉网页，让编辑区跟着系统主题走 */
+    private fun applyWebTheme() {
+        val mode = if (isNightMode) "dark" else "light"
+        webView.evaluateJavascript("window.MQK && window.MQK.setTheme('$mode');", null)
+        historyWebView?.evaluateJavascript("window.MQHistory && window.MQHistory.setTheme('$mode');", null)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applySystemBarAppearance()
+        applyWebTheme()
+    }
+
     /* ==================================================================
-     * 四、复制 LaTeX
+     * 四、复制 LaTeX（同时记入历史）
      * ================================================================ */
 
     private fun copyLatex() {
@@ -175,7 +245,12 @@ class MainActivity : Activity() {
             }
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("LaTeX", latex))
-            // Android 13 起系统自己会弹「已复制」，就不重复提示了
+
+            // 复制成功 = 这条公式"用上了"，记进历史
+            historyItems = historyStore.add(latex)
+            pushHistoryToWeb()
+
+            // Android 13 起系统自己会弹「已复制」，就不再重复提示
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 toast(getString(R.string.copied))
             }
@@ -219,12 +294,51 @@ class MainActivity : Activity() {
     }
 
     /* ==================================================================
-     * 五、网页 -> 原生 的回调
+     * 五、公式历史（底部弹层，公式用 MathQuill 静态排版显示）
      * ================================================================ */
 
+    private fun showHistory() {
+        if (historyDialog == null) {
+            val view = layoutInflater.inflate(R.layout.sheet_history, null)
+            val web = view.findViewById<WebView>(R.id.historyWebView)
+            configureWebView(web)
+            web.addJavascriptInterface(historyBridge, JS_BRIDGE)
+            web.loadUrl(HISTORY_URL)
+
+            view.findViewById<MaterialButton>(R.id.clearHistoryButton).setOnClickListener {
+                historyStore.clear()
+                historyItems = emptyList()
+                pushHistoryToWeb()
+                toast(getString(R.string.history_cleared))
+            }
+
+            historyDialog = BottomSheetDialog(this).apply { setContentView(view) }
+            historyWebView = web
+        }
+        historyItems = historyStore.items()
+        pushHistoryToWeb()
+        historyDialog?.show()
+    }
+
+    /** 把历史列表推给网页渲染（页面还没就绪就先不发，等 onReady 回调） */
+    private fun pushHistoryToWeb() {
+        val web = historyWebView ?: return
+        if (!historyReady) return
+        val arr = JSONArray()
+        historyItems.forEach { arr.put(it) }
+        val mode = if (isNightMode) "dark" else "light"
+        web.evaluateJavascript(
+            "window.MQHistory && window.MQHistory.render($arr, '$mode');", null
+        )
+    }
+
+    /* ==================================================================
+     * 六、网页 -> 原生 的回调
+     * ================================================================ */
+
+    /** 编辑区（WebView 里跑在 JS 线程上，所以要切回 UI 线程） */
     private inner class EditorBridge {
 
-        /** 公式每变一次都会调用（运行在 WebView 的 JS 线程上） */
         @JavascriptInterface
         fun onLatexChanged(latex: String) {
             currentLatex = latex
@@ -233,35 +347,78 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun onEditorReady() {
-            runOnUiThread { renderLatex(currentLatex) }
+            runOnUiThread {
+                renderLatex(currentLatex)
+                applyWebTheme()
+            }
         }
 
-        /** 网页出错时把原因带出来，便于定位（不弹引导，只提示一句） */
         @JavascriptInterface
         fun onError(message: String) {
             runOnUiThread { toast(message) }
         }
     }
 
-    /* ==================================================================
-     * 六、杂项
-     * ================================================================ */
+    /** 历史弹层 */
+    private inner class HistoryBridge {
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
+        @JavascriptInterface
+        fun onReady() {
+            runOnUiThread {
+                historyReady = true
+                pushHistoryToWeb()
+            }
+        }
+
+        @JavascriptInterface
+        fun onPick(index: Int) {
+            runOnUiThread {
+                val latex = historyItems.getOrNull(index) ?: return@runOnUiThread
+                loadLatex(latex)
+                historyDialog?.dismiss()
+            }
+        }
+
+        @JavascriptInterface
+        fun onDelete(index: Int) {
+            runOnUiThread {
+                historyItems = historyStore.removeAt(index)
+                pushHistoryToWeb()
+            }
+        }
+    }
+
+    /** 把某条历史载回编辑器（用 JSONObject.quote 安全转义 LaTeX 里的反斜杠） */
+    private fun loadLatex(latex: String) {
+        val quoted = JSONObject.quote(latex)
+        webView.evaluateJavascript("window.MQK && window.MQK.setLatex($quoted);", null)
+    }
+
+    /* ==================================================================
+     * 七、杂项
+     * ================================================================ */
 
     private fun toast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() {
-        webView.removeJavascriptInterface("Android")
+        historyWebView?.let { web ->
+            web.removeJavascriptInterface(JS_BRIDGE)
+            web.destroy()
+        }
+        historyWebView = null
+        historyDialog = null
+        webView.removeJavascriptInterface(JS_BRIDGE)
         webView.destroy()
         super.onDestroy()
     }
 
     private companion object {
+        const val JS_BRIDGE = "Android"
+
         /** assets 下的离线页面 */
         const val EDITOR_URL = "file:///android_asset/editor/index.html"
+        const val HISTORY_URL = "file:///android_asset/editor/history.html"
     }
 }

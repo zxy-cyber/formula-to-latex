@@ -1,14 +1,36 @@
 @charset "UTF-8";
 /* ==========================================================================
  * 公式转LaTeX —— 编辑区样式
- * 只做三件事：铺满编辑区、方框占位符看得清、去掉 MathQuill 自带的输入框边框
+ *
+ * 只做四件事：
+ *   1. 铺满编辑区
+ *   2. 方框占位符看得清
+ *   3. 去掉 MathQuill 自带的输入框边框
+ *   4. 深浅色跟随系统（Android 侧调用 MQK.setTheme 切换 html.dark）
  * ========================================================================== */
+
+:root {
+  --bg: #ffffff;          /* 与 Material 3 的 colorSurfaceContainerLowest（日间）一致 */
+  --fg: #1f2937;
+  --caret: #1f2937;
+  --empty-bg: #e8f0fe;
+  --empty-line: #7aa7e8;
+}
+
+html.dark {
+  --bg: #0f0d13;          /* Material 3 深色 colorSurfaceContainerLowest */
+  --fg: #e6e1e5;
+  --caret: #e6e1e5;
+  --empty-bg: #26303d;
+  --empty-line: #6b9ad8;
+}
 
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #ffffff;
+  background: var(--bg);
+  color: var(--fg);
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -37,8 +59,8 @@ html, body {
 /* ---------- 方框占位符 ---------- */
 /* MathQuill 会给「没有光标的空块」加上 .mq-empty，这里画成醒目的方框 */
 .mq-math-mode .mq-empty {
-  background: #e8f0fe;
-  box-shadow: inset 0 0 0 1.5px #7aa7e8;
+  background: var(--empty-bg);
+  box-shadow: inset 0 0 0 1.5px var(--empty-line);
   border-radius: 4px;
   min-width: 0.55em;
 }
@@ -54,7 +76,7 @@ html, body {
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
-  color: #1f2937;
+  color: var(--fg);
 }
 
 .mq-editable-field.mq-focused {
@@ -62,8 +84,9 @@ html, body {
   box-shadow: none !important;
 }
 
-/* 光标加粗一点，手指操作时更容易看见 */
+/* 光标跟随主题（MathQuill 默认是黑色竖线） */
 .mq-editable-field .mq-cursor {
+  border-left-color: var(--caret);
   border-left-width: 2px;
 }
 

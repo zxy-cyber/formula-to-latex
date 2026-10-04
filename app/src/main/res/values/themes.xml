@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 直接用系统 Material 主题，不引入 AndroidX / Material Components，APK 更小 -->
-    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:colorPrimary">@color/copy_bg</item>
-        <item name="android:colorPrimaryDark">@color/copy_pressed</item>
-        <item name="android:colorAccent">@color/copy_bg</item>
-        <item name="android:windowBackground">@color/page_bg</item>
-        <item name="android:statusBarColor">@color/copy_bg</item>
-        <item name="android:navigationBarColor">@color/page_bg</item>
+    <!--
+      官方 Material 3 主题，自带日间/夜间两套配色（DayNight），
+      App 会跟随系统深色模式，不需要自己维护两套颜色。
+      NoActionBar：顶部标题栏在 activity_main.xml 里自己搭，保持单屏紧凑。
+    -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- targetSdk 35 起系统强制边到边显示，状态栏/导航栏用透明色；
+             实际留白由布局根节点的 fitsSystemWindows 负责 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- 按键文字：数学符号不需要 Material 默认的字距 -->
+    <style name="KeypadLabel" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:letterSpacing">0</item>
     </style>
 </resources>

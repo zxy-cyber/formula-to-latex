@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 按键模板：实心淡色按钮（结构模板 / 光标方向键） -->
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.Material3.Button.TonalButton"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp"
+    android:textAllCaps="false"
+    android:textAppearance="@style/KeypadLabel" />

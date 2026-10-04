@@ -1,83 +1,157 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  单屏布局：
-    ① 公式编辑区（WebView，占一半高度）
-    ② 结构按钮键盘（内容由 MainActivity 按 KeypadSpec 生成）
-    ③ 只读 LaTeX 源码区
-    ④ 复制 LaTeX 按钮
+  单屏布局（Material 3）：
+    ① 顶部标题栏 + 「历史」按钮
+    ② 公式编辑区（MaterialCardView 包着 WebView）
+    ③ 按键区（三段 GridLayout，内容由 MainActivity 按 KeypadSpec 生成）
+    ④ LaTeX 源码卡片（代码块样式）
+    ⑤ 复制 LaTeX 按钮
+
+  fitsSystemWindows：targetSdk 35 起系统强制边到边显示，靠它把内容让开状态栏/导航栏。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/page_bg"
+    android:background="?attr/colorSurface"
+    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
-    <!-- ① 公式编辑区：系统 WebView + MathQuill（assets 离线） -->
-    <WebView
-        android:id="@+id/mathWebView"
+    <!-- ① 标题栏 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="@color/card_bg"
-        android:minHeight="110dp" />
-
-    <!-- ② 结构按钮键盘 -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="@color/page_bg"
-        android:paddingTop="4dp"
-        android:scrollbarStyle="insideOverlay"
-        android:scrollbars="vertical">
-
-        <GridLayout
-            android:id="@+id/keypad"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="6"
-            android:paddingLeft="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="6dp" />
-    </ScrollView>
-
-    <!-- ③ 只读 LaTeX 源码，实时刷新 -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="76dp"
-        android:background="@color/code_bg"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
         android:paddingTop="6dp"
-        android:paddingBottom="6dp"
-        android:scrollbars="vertical">
+        android:paddingEnd="8dp">
 
         <TextView
-            android:id="@+id/latexText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/app_name"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorOnSurface" />
+
+        <!-- 用 ☰ 表示"历史列表"，避免依赖额外的图标资源 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/historyButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="48dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/history_glyph"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <!-- ② 公式编辑区 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="12dp"
+        android:layout_weight="1"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        app:strokeWidth="1dp">
+
+        <WebView
+            android:id="@+id/mathWebView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ③ 按键区（三段，纵向可滚动） -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="6dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="6dp"
+        android:scrollbars="none">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textColor="@color/code_text"
-            android:textIsSelectable="true"
-            android:textSize="13sp" />
+            android:orientation="vertical">
+
+            <!-- 结构模板：分数 / 上标 / 下标 / 上下标 / 求和 / 极限 / 积分 / 根号 / 括号 -->
+            <GridLayout
+                android:id="@+id/keypadStructure"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="5" />
+
+            <!-- 希腊字母 + 运算符 -->
+            <GridLayout
+                android:id="@+id/keypadSymbol"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:columnCount="6" />
+
+            <!-- 光标方向键 + 编辑操作 -->
+            <GridLayout
+                android:id="@+id/keypadEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:columnCount="6" />
+        </LinearLayout>
     </ScrollView>
 
-    <!-- ④ 复制 LaTeX（用 TextView 而不是 Button：
-         避免系统主题给按钮加 backgroundTint / minHeight / 全大写，外观完全由 drawable 决定） -->
-    <TextView
-        android:id="@+id/copyButton"
+    <!-- ④ LaTeX 源码卡片 -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_marginLeft="10dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="12dp"
+        app:cardBackgroundColor="@color/code_bg"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="78dp"
+            android:paddingStart="14dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/latexText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="@color/code_text"
+                android:textIsSelectable="true"
+                android:textSize="13sp" />
+        </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ⑤ 复制按钮 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/copyButton"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
-        android:layout_marginRight="10dp"
+        android:layout_marginEnd="12dp"
         android:layout_marginBottom="10dp"
-        android:background="@drawable/copy_bg"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center"
         android:text="@string/copy_latex"
-        android:textColor="@color/copy_text"
-        android:textSize="16sp" />
+        android:textSize="16sp"
+        app:cornerRadius="14dp" />
 
 </LinearLayout>

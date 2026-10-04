@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">公式转LaTeX</string>
+
+    <!-- 顶部按钮用符号表示"历史列表"，避免引入图标资源 -->
+    <string name="history_glyph">☰</string>
+    <string name="history_title">公式历史</string>
+    <string name="history_clear">清空</string>
+
     <string name="copy_latex">复制 LaTeX</string>
-    <string name="copied">已复制 LaTeX</string>
+    <string name="copied">已复制，并已记入历史</string>
     <string name="nothing_to_copy">公式还是空的，先输入点什么吧</string>
     <string name="latex_placeholder">（这里会实时显示 LaTeX 源码）</string>
+
+    <string name="history_empty">还没有历史记录\n点「复制 LaTeX」的公式会自动存到这里</string>
+    <string name="history_cleared">历史已清空</string>
 </resources>
