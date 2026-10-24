@@ -16,6 +16,8 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.GridLayout
+import android.widget.LinearLayout
+import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -119,14 +121,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildKeypad() {
         val symbolPage = findViewById<GridLayout>(R.id.keypadSymbol)
-        val charPage = findViewById<GridLayout>(R.id.keypadChars)
+        val charPage = findViewById<LinearLayout>(R.id.keypadChars)
         val fixedRow = findViewById<GridLayout>(R.id.keypadFixed)
 
-        // 符号页：结构模板 / 希腊字母 / 运算符 / 撤销重做 / 方框跳转 —— 6 列 × 6 行正好铺满
-        fillGrid(symbolPage, KeypadSpec.SYMBOL_PAGE, labelSize = 18f, cellHeightDp = 44)
-        // 字母数字页：0-9 + a-z —— 同样 6 × 6，不需要滚动
-        fillGrid(charPage, KeypadSpec.CHAR_PAGE, labelSize = 18f, cellHeightDp = 44)
-        // 固定行：光标方向键 + 删除 + 清空，键更大、位置更靠下
+        // 符号页：7 列 × 5 行
+        fillGrid(symbolPage, KeypadSpec.SYMBOL_PAGE, labelSize = 17f, cellHeightDp = 44)
+        // 字母数字页：仿实体键盘（数字行 / QWERTY / ASDF / ZXCV / 运算符），同样 5 行
+        fillCharRows(charPage)
+        // 固定行：光标方向键 + 等号 + 删除，键更大、位置更靠下
         fillGrid(fixedRow, KeypadSpec.FIXED_ROW, labelSize = 21f, cellHeightDp = 50)
 
         // 页签只切换可见性，不重建视图（切换零延迟）
@@ -142,36 +144,86 @@ class MainActivity : AppCompatActivity() {
         charPage.visibility = View.GONE
     }
 
+    /**
+     * 从一个 XML 模板造出一个 Material 按键（不含布局参数）。
+     * 说明：MaterialButton 没有公开的"带样式"构造函数，所以用布局模板套 style。
+     */
+    private fun createKey(item: KeyItem, labelSize: Float): MaterialButton {
+        val density = resources.displayMetrics.density
+        val button = layoutInflater.inflate(templateFor(item.group), null, false) as MaterialButton
+        button.apply {
+            text = item.label
+            textSize = labelSize
+            insetTop = 0                   // 去掉 Material 按钮自带的上下留白，
+            insetBottom = 0                // 让按键铺满整个格子
+            cornerRadius = (9 * density).toInt()
+            setPadding(0, 0, 0, 0)
+            setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                pressKey(item.action)
+            }
+        }
+        return button
+    }
+
+    /** 等宽铺满的网格（符号页、固定行用） */
     private fun fillGrid(grid: GridLayout, keys: List<KeyItem>, labelSize: Float, cellHeightDp: Int) {
         val density = resources.displayMetrics.density
         val margin = (2 * density).toInt()
 
         keys.forEach { item ->
-            // 从 XML 模板 inflate：MaterialButton 没有公开的"带样式"构造函数，
-            // 用布局模板套 style 是最稳的做法
-            val button = layoutInflater
-                .inflate(templateFor(item.group), grid, false) as MaterialButton
-
-            button.apply {
-                text = item.label
-                textSize = labelSize
-                insetTop = 0                   // 去掉 Material 按钮自带的上下留白，
-                insetBottom = 0                // 让按键铺满整个格子
-                cornerRadius = (10 * density).toInt()
-                setPadding(0, 0, 0, 0)
-                setOnClickListener { view ->
-                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    pressKey(item.action)
-                }
-            }
-
             val params = GridLayout.LayoutParams().apply {
                 width = 0
                 height = (cellHeightDp * density).toInt()
                 columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)   // 每列等宽
                 setMargins(margin, margin, margin, margin)
             }
-            grid.addView(button, params)
+            grid.addView(createKey(item, labelSize), params)
+        }
+    }
+
+    /**
+     * 仿实体键盘的按行布局（字母数字页）。
+     *
+     * 每行是一个横向 LinearLayout：
+     *   - 普通键 weight = 1
+     *   - 首尾用空占位（Space）加 weight，做出键盘那种"错位缩进"
+     * 这样虽然每行键数不同（10 / 9 / 7 / 5），键宽仍然完全一致。
+     */
+    private fun fillCharRows(container: LinearLayout) {
+        val density = resources.displayMetrics.density
+        val gap = (2 * density).toInt()
+        val keyHeight = (44 * density).toInt()
+
+        container.removeAllViews()
+
+        KeypadSpec.CHAR_ROWS.forEach { row ->
+            val rowView = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+
+            fun addSpacer(weight: Float) {
+                if (weight <= 0f) return
+                rowView.addView(
+                    Space(this),
+                    LinearLayout.LayoutParams(0, keyHeight, weight)
+                )
+            }
+
+            addSpacer(row.indentStart)
+            row.keys.forEach { item ->
+                val params = LinearLayout.LayoutParams(0, keyHeight, 1f).apply {
+                    setMargins(gap, gap, gap, gap)
+                }
+                rowView.addView(createKey(item, 17f), params)
+            }
+            addSpacer(row.indentEnd)
+
+            container.addView(rowView)
         }
     }
 

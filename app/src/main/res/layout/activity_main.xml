@@ -112,25 +112,27 @@
             android:textSize="13sp" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
-    <!-- ④ 按键页（内容由 MainActivity 生成；两页互斥显示） -->
+    <!-- ④ 按键页（内容由 MainActivity 生成；两页互斥显示，都是 5 行，切页高度不变） -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp">
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
 
+        <!-- 符号页：7 列 × 5 行 -->
         <GridLayout
             android:id="@+id/keypadSymbol"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="6" />
+            android:columnCount="7" />
 
-        <GridLayout
+        <!-- 字母数字页：仿实体键盘，按行生成（数字行 / QWERTY / ASDF / ZXCV / 运算符） -->
+        <LinearLayout
             android:id="@+id/keypadChars"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="6"
+            android:orientation="vertical"
             android:visibility="gone" />
     </FrameLayout>
 
