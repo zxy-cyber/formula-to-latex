@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  单屏布局（Material 3），按"不翻动"来排：
+  单屏布局（Material 3），从上到下：
 
     ① 标题栏（含 ☰ 公式历史）
-    ② 公式编辑区（占剩余高度）
-    ③ 页签：符号 / 字母数字   —— 两页各 6 行，正好铺满，不需要滚动
-    ④ 按键页
-    ⑤ 固定常用行：← ↑ ↓ → ⌫ C —— 不随页切换，键更大、位置更靠下（拇指区）
-    ⑥ LaTeX 代码块 + 小巧的「复制」按钮（同一行，省下一整行高度）
+    ② LaTeX 源码 + 复制按钮 —— 只读信息，放顶部，不占拇指区
+    ③ 公式编辑区            —— 占剩余高度
+    ④ 页签：符号 / 字母数字
+    ⑤ 按键页（两页互斥显示，都是 5 行，切页高度不变）
+    ⑥ 固定符号行：＋ − × ÷ = ( )  —— 两页都在同一位置
+    ⑦ 固定光标行：← ↑ ↓ → ⌫      —— 紧贴屏幕底部，拇指最舒服
 
   fitsSystemWindows：targetSdk 35 起系统强制边到边显示，靠它让开状态栏/导航栏。
-  整个布局没有滚动容器：按键是固定行高，编辑区吃掉剩余空间；
-  只有 LaTeX 文本过长时它自己内部横向/纵向滚动。
+  整个布局没有滚动容器；只有 LaTeX 文本过长时它自己内部滚动。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -25,7 +25,7 @@
     <!-- ① 标题栏 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="46dp"
+        android:layout_height="44dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="20dp"
@@ -53,15 +53,68 @@
             android:textSize="19sp" />
     </LinearLayout>
 
-    <!-- ② 公式编辑区 -->
+    <!-- ② LaTeX 源码 + 复制按钮（放顶部，把底部空间让给键盘） -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="12dp"
+        app:cardBackgroundColor="@color/code_bg"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="5dp">
+
+            <ScrollView
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1">
+
+                <TextView
+                    android:id="@+id/latexText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/code_text"
+                    android:textIsSelectable="true"
+                    android:textSize="13sp" />
+            </ScrollView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/copyButton"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="@string/copy_latex"
+                android:textSize="14sp"
+                app:cornerRadius="10dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ③ 公式编辑区（占剩余高度） -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginStart="12dp"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="6dp"
         android:layout_marginEnd="12dp"
         android:layout_weight="1"
-        android:minHeight="88dp"
+        android:minHeight="76dp"
         app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
         app:cardCornerRadius="14dp"
         app:cardElevation="0dp"
@@ -75,7 +128,7 @@
             android:background="@android:color/transparent" />
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- ③ 页签：两页键盘切换 -->
+    <!-- ④ 页签：两页键盘切换 -->
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/pageToggle"
         android:layout_width="match_parent"
@@ -112,7 +165,7 @@
             android:textSize="13sp" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
-    <!-- ④ 按键页（内容由 MainActivity 生成；两页互斥显示，都是 5 行，切页高度不变） -->
+    <!-- ⑤ 按键页（内容由 MainActivity 生成；两页都是 5 行，高度一致，切页不跳） -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -120,14 +173,14 @@
         android:paddingStart="4dp"
         android:paddingEnd="4dp">
 
-        <!-- 符号页：7 列 × 5 行 -->
+        <!-- 符号页：6 列 × 5 行 -->
         <GridLayout
             android:id="@+id/keypadSymbol"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="7" />
+            android:columnCount="6" />
 
-        <!-- 字母数字页：仿实体键盘，按行生成（数字行 / QWERTY / ASDF / ZXCV / 运算符） -->
+        <!-- 字母数字页：仿实体键盘，按行生成（数字 1-5 / 6-0 / QWERTY / ASDF / ZXCV） -->
         <LinearLayout
             android:id="@+id/keypadChars"
             android:layout_width="match_parent"
@@ -136,68 +189,25 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- ⑤ 固定常用行：光标方向键 + 删除 + 清空 -->
+    <!-- ⑥ 固定符号行：＋ − × ÷ = ( ) —— 两页都在这个位置，位置固定不变 -->
     <GridLayout
-        android:id="@+id/keypadFixed"
+        android:id="@+id/keypadFixedSymbols"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
         android:columnCount="6"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp" />
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp" />
 
-    <!-- ⑥ LaTeX 代码块 + 小巧的复制按钮 -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- ⑦ 固定光标行：← ↑ ↓ → ⌫ —— 紧贴屏幕底部，拇指最好按 -->
+    <GridLayout
+        android:id="@+id/keypadFixedCursor"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="8dp"
-        app:cardBackgroundColor="@color/code_bg"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingTop="6dp"
-            android:paddingEnd="6dp"
-            android:paddingBottom="6dp">
-
-            <ScrollView
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1">
-
-                <TextView
-                    android:id="@+id/latexText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="monospace"
-                    android:textColor="@color/code_text"
-                    android:textIsSelectable="true"
-                    android:textSize="13sp" />
-            </ScrollView>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/copyButton"
-                style="@style/Widget.Material3.Button"
-                android:layout_width="wrap_content"
-                android:layout_height="38dp"
-                android:layout_marginStart="8dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="@string/copy_latex"
-                android:textSize="14sp"
-                app:cornerRadius="10dp" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="6dp"
+        android:columnCount="5"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp" />
 
 </LinearLayout>

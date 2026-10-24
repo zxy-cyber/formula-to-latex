@@ -2,6 +2,10 @@
 /* ==========================================================================
  * 公式历史弹层样式
  * 深色/浅色跟着系统走（Android 侧调用 MQHistory.setTheme 切换 .dark）
+ *
+ * 布局：每条记录两行
+ *   第一行：渲染好的公式（占满整行宽度，超长时可以左右滑动）
+ *   第二行：原始 LaTeX（小字灰色，超长省略）+ 右侧删除按钮
  * ========================================================================== */
 
 :root {
@@ -34,11 +38,8 @@ html, body {
 }
 
 .item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-bottom: 8px;
-  padding: 10px 10px 10px 14px;
+  padding: 8px 12px 6px 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
 }
@@ -47,17 +48,41 @@ html, body {
   background: var(--chip);
 }
 
-/* 渲染后的公式：给足宽度，长公式横向滚动 */
+/*
+ * 渲染后的公式：占满整行、单行不换行，超出就横向滚动。
+ * display 必须是 block：MathQuill 会把 .mq-math-mode 设成 inline-block，
+ * 那样宽度会被内容撑开、反而滚不动。
+ */
 .formula {
-  flex: 0 0 auto;
-  max-width: 45%;
+  display: block;
+  width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  font-size: 21px;
   white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  font-size: 21px;
+  line-height: 1.4;
 }
 
-/* 底下附一行原始 LaTeX，方便需要时核对 */
+/*
+ * 关键：MathQuill 给 .mq-root-block 设了 width:100% + overflow:hidden
+ * （那是给可编辑区""内部横向滚动""用的），放到历史列表里就会把超长公式
+ * 直接裁掉——外层容器也就"看起来没溢出"，怎么滑都不动。
+ * 这里让它按内容宽度撑开，外层才能真正横向滚动。
+ */
+.formula .mq-root-block {
+  width: auto;
+  overflow: visible;
+}
+
+/* 第二行：原始 LaTeX + 删除按钮 */
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
 .latex {
   flex: 1 1 auto;
   overflow: hidden;

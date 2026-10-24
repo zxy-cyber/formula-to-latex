@@ -34,8 +34,13 @@
       var row = document.createElement('div');
       row.className = 'item';
 
+      // 第一行：渲染好的公式，占满整行（过长可左右滑动）
       var formula = document.createElement('div');
       formula.className = 'formula';
+
+      // 第二行：原始 LaTeX + 删除按钮
+      var meta = document.createElement('div');
+      meta.className = 'meta';
 
       var latexText = document.createElement('div');
       latexText.className = 'latex';
@@ -50,9 +55,10 @@
         if (window.Android && window.Android.onDelete) window.Android.onDelete(index);
       });
 
+      meta.appendChild(latexText);
+      meta.appendChild(del);
       row.appendChild(formula);
-      row.appendChild(latexText);
-      row.appendChild(del);
+      row.appendChild(meta);
       row.addEventListener('click', function () {
         if (window.Android && window.Android.onPick) window.Android.onPick(index);
       });

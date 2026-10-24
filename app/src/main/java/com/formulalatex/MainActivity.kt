@@ -122,14 +122,15 @@ class MainActivity : AppCompatActivity() {
     private fun buildKeypad() {
         val symbolPage = findViewById<GridLayout>(R.id.keypadSymbol)
         val charPage = findViewById<LinearLayout>(R.id.keypadChars)
-        val fixedRow = findViewById<GridLayout>(R.id.keypadFixed)
 
-        // 符号页：7 列 × 5 行
-        fillGrid(symbolPage, KeypadSpec.SYMBOL_PAGE, labelSize = 17f, cellHeightDp = 44)
-        // 字母数字页：仿实体键盘（数字行 / QWERTY / ASDF / ZXCV / 运算符），同样 5 行
+        // 符号页：6 列 × 5 行
+        fillGrid(symbolPage, KeypadSpec.SYMBOL_PAGE, labelSize = 17f, cellHeightDp = 42)
+        // 字母数字页：仿实体键盘（1-5 / 6-0 / QWERTY / ASDF / ZXCV），同样 5 行、同样行高
         fillCharRows(charPage)
-        // 固定行：光标方向键 + 等号 + 删除，键更大、位置更靠下
-        fillGrid(fixedRow, KeypadSpec.FIXED_ROW, labelSize = 21f, cellHeightDp = 50)
+        // 固定符号行：＋ − × ÷ = ( )，两页都在这个位置，不随页切换
+        fillGrid(findViewById(R.id.keypadFixedSymbols), KeypadSpec.FIXED_SYMBOLS, labelSize = 19f, cellHeightDp = 44)
+        // 固定光标行：← ↑ ↓ → ⌫，紧贴屏幕底部，键再大一点
+        fillGrid(findViewById(R.id.keypadFixedCursor), KeypadSpec.FIXED_CURSOR, labelSize = 22f, cellHeightDp = 46)
 
         // 页签只切换可见性，不重建视图（切换零延迟）
         findViewById<MaterialButtonToggleGroup>(R.id.pageToggle)
@@ -151,9 +152,11 @@ class MainActivity : AppCompatActivity() {
     private fun createKey(item: KeyItem, labelSize: Float): MaterialButton {
         val density = resources.displayMetrics.density
         val button = layoutInflater.inflate(templateFor(item.group), null, false) as MaterialButton
+        // 撤销/重做/清空这几个字形本身笔画细，放大一点才看得清
+        val size = if (item.group == KeyItem.Group.EDIT) labelSize + 4f else labelSize
         button.apply {
             text = item.label
-            textSize = labelSize
+            textSize = size
             insetTop = 0                   // 去掉 Material 按钮自带的上下留白，
             insetBottom = 0                // 让按键铺满整个格子
             cornerRadius = (9 * density).toInt()
@@ -193,7 +196,8 @@ class MainActivity : AppCompatActivity() {
     private fun fillCharRows(container: LinearLayout) {
         val density = resources.displayMetrics.density
         val gap = (2 * density).toInt()
-        val keyHeight = (44 * density).toInt()
+        // 与符号页的行高一致（42dp + 上下 2dp 间距），这样两页总高度相同、切页不跳
+        val keyHeight = (42 * density).toInt()
 
         container.removeAllViews()
 
@@ -227,11 +231,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 分组 -> 按键布局模板：结构/光标/数字最显眼，符号与字母次之，编辑操作最轻 */
+    /**
+     * 分组 -> 按键布局模板。
+     * 注意 EDIT 也用描边模板：早先用"文字按钮"（无背景）时，
+     * ↶ ↷ C 在深色/浅色都像几根飘着的细线，看不出是按钮。
+     */
     private fun templateFor(group: KeyItem.Group): Int = when (group) {
-        KeyItem.Group.STRUCTURE, KeyItem.Group.CURSOR, KeyItem.Group.DIGIT -> R.layout.key_tonal
-        KeyItem.Group.GREEK, KeyItem.Group.OPERATOR, KeyItem.Group.LETTER -> R.layout.key_outlined
-        KeyItem.Group.EDIT -> R.layout.key_text
+        KeyItem.Group.STRUCTURE, KeyItem.Group.CURSOR, KeyItem.Group.FIXED,
+        KeyItem.Group.DIGIT -> R.layout.key_tonal
+        KeyItem.Group.EDIT, KeyItem.Group.GREEK, KeyItem.Group.OPERATOR,
+        KeyItem.Group.LETTER -> R.layout.key_outlined
     }
 
     /**
