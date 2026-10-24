@@ -47,13 +47,19 @@ html, body {
 }
 
 /* MathQuill 根节点：字号放大，方便手指点选 */
+/*
+ * 注意：这里**不要**设 line-height。
+ * MathQuill 自己给 .mq-math-mode 设了 line-height: 1，它靠"内容块高度 ÷ 字号"
+ * 来计算括号（\left( \right)）要纵向放大多少倍；如果这里用 ID 选择器把行高改成 1.5，
+ * 括号就会被算成要放大 1.8~1.9 倍，看起来被拉长、和内容明显不匹配。
+ */
 #field {
   display: inline-block;
   min-width: 70%;
   min-height: 2.4em;
   font-size: 30px;
-  line-height: 1.5;
   vertical-align: middle;
+  line-height: 1;          /* 与 MathQuill 的 .mq-math-mode 保持一致，别再调大 */
 }
 
 /* ---------- 方框占位符 ---------- */

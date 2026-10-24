@@ -214,6 +214,28 @@
     type('x');
     check('括号 \\left(x\\right)', latex(), '\\left(x\\right)');
 
+    /* --- 括号渲染：MathQuill 会按「内容高度 ÷ 字号」纵向放大括号。
+           曾经因为编辑区 CSS 把 line-height 设成 1.5，括号被放大到 1.93 倍，
+           看起来被拉长、和内容明显不匹配。这里用几何断言把它钉住。 --- */
+    await reset();
+    press('paren');                       // 空括号，最容易暴露过度拉伸
+    var parenEls = document.querySelectorAll('#field .mq-paren');
+    var parenContent = document.querySelector('#field .mq-paren + span');
+    var scaleOf = function (el) {
+      var m = /matrix\(([^)]+)\)/.exec(getComputedStyle(el).transform);
+      return m ? parseFloat(m[1].split(',')[3]) : NaN;
+    };
+    checkTrue('括号渲染：左右两个括号都存在', parenEls.length === 2);
+    if (parenEls.length === 2) {
+      check('括号渲染：左右缩放一致', scaleOf(parenEls[0]), scaleOf(parenEls[1]));
+      var sy = scaleOf(parenEls[0]);
+      checkTrue('括号渲染：纵向缩放合理（1.1~1.4）', sy >= 1.1 && sy <= 1.4);
+      var ph = parenEls[0].getBoundingClientRect().height;
+      var ch = parenContent ? parenContent.getBoundingClientRect().height : 0;
+      checkTrue('括号渲染：高度不超过内容的 1.5 倍',
+        ch > 0 && ph > 0 && ph <= ch * 1.5);
+    }
+
     await reset();
     press('int');
     type('0');
